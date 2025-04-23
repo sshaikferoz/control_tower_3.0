@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     },
     basePath: '', // Adjust this to your BSP path
     assetPrefix: '',
-    reactStrictMode: true,
+    // reactStrictMode: true,
 };
 
 export default nextConfig;
