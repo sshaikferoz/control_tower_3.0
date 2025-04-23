@@ -5,18 +5,20 @@ import { Button } from "primereact/button";
 import { useState } from "react";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
-import { redirect } from "next/navigation"; // Use Next.js navigation
 
+import { Checkbox } from "primereact/checkbox"; // Import Checkbox from PrimeReact
 
 const Header = () => {
   const [visible, setVisible] = useState(false);
   const [sectionName, setSectionName] = useState("");
-
+  const [isExpanded, setIsExpanded] = useState(true); // Default to expanded
 
   const handleCreateSection = () => {
     const randomId = Math.random().toString(36).substring(2, 10); // Generate random ID
     const encodedSectionName = encodeURIComponent(sectionName.trim());
-    redirect(`/mapping/${randomId}?sectionName=${encodedSectionName}`) // Navigate to the new post page
+    // Include the expanded state in the URL parameters
+      window.window.location.href = `/mapping?sectionName=${encodedSectionName}&expanded=${isExpanded}`;
+      
   };
 
   return (
@@ -26,7 +28,7 @@ const Header = () => {
           <SCMLogo />
         </div>
         <span className="text-white font-semibold text-xl">My SCM</span>
-    </div>
+      </div>
       <div className="relative w-[546px]">
         <input
           type="text"
@@ -44,11 +46,37 @@ const Header = () => {
         style={{ width: "30vw" }}
         onHide={() => setVisible(false)}
       >
-        <div className="flex flex-col">
-          <label htmlFor="section-name">Section Name</label>
-          <InputText id="section-name" aria-describedby="section-name-help"  onChange={(e) => setSectionName(e.target.value)}/>
-          <small id="section-name-help">Enter the section name</small>
-          <Button label="Create Section" icon="pi pi-external-link" onClick={handleCreateSection} />
+        <div className="flex flex-col gap-4">
+          <div className="field">
+            <label htmlFor="section-name" className="block mb-2">Section Name</label>
+            <InputText 
+              id="section-name" 
+              aria-describedby="section-name-help" 
+              className="w-full"
+              value={sectionName}
+              onChange={(e) => setSectionName(e.target.value)}
+            />
+            <small id="section-name-help" className="block mt-1 text-gray-500">Enter the section name</small>
+          </div>
+          
+          <div className="field-checkbox flex items-center gap-2">
+            <Checkbox 
+              inputId="expanded" 
+              checked={isExpanded} 
+              onChange={(e:any) => setIsExpanded(e.checked)}
+            />
+            <label htmlFor="expanded">Expanded by default</label>
+          </div>
+          
+                  <div className="mt-4">
+                    
+            <Button 
+              label="Create Section" 
+              icon="pi pi-external-link" 
+              className="w-full"
+              onClick={handleCreateSection} 
+            />
+          </div>
         </div>
       </Dialog>
     </nav>

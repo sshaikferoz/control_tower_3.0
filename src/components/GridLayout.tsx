@@ -58,7 +58,7 @@
             </div>
             <SingleLineChart data={SingleLineChartData}/>
             <div className="flex flex-col gap-3">
-                <MultiMetrics/>
+                {/* <MultiMetrics/> */}
                 <PieMetric data={pieData?.data} metrics={pieData?.metrics}/>
             </div>
             

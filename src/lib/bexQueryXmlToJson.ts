@@ -99,7 +99,7 @@ export function parseXMLToJson(xmlString: string): any {
       
       while ((match = fieldPattern.exec(itemBlock)) !== null) {
         const fieldName = match[1];
-        let fieldValue = match[2];
+        let fieldValue:any = match[2];
         
         // Try to convert numeric values
         if (!isNaN(Number(fieldValue)) && fieldValue.trim() !== "") {
