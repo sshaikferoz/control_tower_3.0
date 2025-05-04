@@ -7,11 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "export":"next export"
+    "export": "next export"
   },
   "dependencies": {
     "@autoform/mui": "^2.2.0",
     "@heroicons/react": "^2.2.0",
+    "@next/swc-darwin-arm64": "^15.3.1",
     "fast-xml-parser": "^5.0.9",
     "gridstack": "^11.4.0",
     "lucide-react": "^0.479.0",
