@@ -5,13 +5,17 @@ import { Button } from 'primereact/button';
 import { WidgetTypes } from '@/types';
 import TabPanel from '../TabPanel';
 import BasicConfigTab from './BasicConfigTab';
-// import PreviewTab from './PreviewTab';
+import HybridMappingTab from './HybridMappingTab';
+import PreviewTab from './PreviewTab';
+import DataIcon from '@mui/icons-material/Storage';
+import SettingsIcon from '@mui/icons-material/Settings';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 interface ConfigPanelProps {
   selectedWidget: string | null;
   widgetType: WidgetTypes | null;
   widgetConfigurations: Record<string, any>;
-//   previewData: any;
+  previewData: any;
   onValueChange: (field: string, value: any) => void;
   onGeneratePreview: () => void;
   onSaveLayout: () => void;
@@ -21,9 +25,9 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
   selectedWidget,
   widgetType,
   widgetConfigurations,
-//   previewData,
+  previewData,
   onValueChange,
-//   onGeneratePreview,
+  onGeneratePreview,
   onSaveLayout
 }) => {
   const [tabValue, setTabValue] = useState(0);
@@ -34,7 +38,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
   };
 
   return (
-    <div className="p-4 m-auto max-h-[400px] min-w-[1200px] overflow-y-auto">
+    <div className="p-4 m-auto max-h-[calc(100vh-250px)] min-w-[1200px] overflow-y-auto">
       <Typography variant="h6" component="h2" gutterBottom>
         Widget Configuration
       </Typography>
@@ -47,8 +51,9 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
           {/* Tabs for different configuration aspects */}
           <Tabs value={tabValue} onChange={handleTabChange} aria-label="mapping tabs">
-            <Tab label="Basic Configuration" />
-            <Tab label="Preview" />
+            <Tab icon={<SettingsIcon />} label="Basic Configuration" />
+            <Tab icon={<DataIcon />} label="Data Mapping" />
+            <Tab icon={<VisibilityIcon />} label="Preview" />
           </Tabs>
 
           {/* Basic Configuration Tab */}
@@ -61,16 +66,26 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
             />
           </TabPanel>
 
+          {/* Hybrid Mapping Tab */}
+          <TabPanel value={tabValue} index={1}>
+            <HybridMappingTab
+              selectedWidget={selectedWidget}
+              widgetType={widgetType}
+              widgetConfigurations={widgetConfigurations}
+              onValueChange={onValueChange}
+            />
+          </TabPanel>
+
           {/* Preview Tab */}
-          {/* <TabPanel value={tabValue} index={1}>
+          <TabPanel value={tabValue} index={2}>
             <PreviewTab
               previewData={previewData}
               onGeneratePreview={onGeneratePreview}
             />
-          </TabPanel> */}
+          </TabPanel>
         </Box>
       ) : (
-        <Typography color="textSecondary">
+        <Typography color="text.secondary">
           Select a widget to configure it
         </Typography>
       )}

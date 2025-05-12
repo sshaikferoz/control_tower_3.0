@@ -1,6 +1,6 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createServer } from "miragejs";
 import MyContractsIcon from "@/assets/MyContractsIcon";
 import Header from "@/components/Header";
@@ -20,7 +20,17 @@ import PieChartWithTotal from "@/grid-components/PieChartWithTotal";
 import QuadrantMetrics from "@/grid-components/QuadrantMetrics";
 import LoansAppTray from "@/grid-components/LoansAppTray";
 
-import { CircularProgress, Typography } from "@mui/material";
+import { 
+    CircularProgress, 
+    Typography, 
+    Button, 
+    IconButton,
+    Snackbar,
+    Alert
+} from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import SaveIcon from "@mui/icons-material/Save";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import NewsFeed from "@/grid-components/NewsFeed";
 import Sidebar from "@/components/Sidebar";
 
@@ -36,6 +46,12 @@ if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
                     sections: JSON.parse(savedLayout),
                 };
             });
+
+            this.post("/dashboard", (schema, request) => {
+                const data = JSON.parse(request.requestBody);
+                sessionStorage.setItem("payload", JSON.stringify(data.sections));
+                return { success: true };
+            });
         },
     });
 }
@@ -43,7 +59,7 @@ if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
 const GridLayout = WidthProvider(RGL);
 
 // Component mappings
-const widgetMapping:any = {
+const widgetMapping: any = {
     "two-metrics": MultiMetrics,
     "two-metrics-piechart": PieMetric,
     "one-metric": SimpleMetric,
@@ -59,42 +75,76 @@ const widgetMapping:any = {
     "loans-app-tray": LoansAppTray
 };
 
-// Component for section header with appropriate icon
-const SectionHeader = ({ title, isExpanded, toggleExpanded }:any) => {
-    return (
-        <div
-            className="flex items-center p-4 m-2 gap-2 cursor-pointer"
-            onClick={toggleExpanded}
-        >
-            <MyContractsIcon />
-            <p className="text-[#fff]">{title}</p>
-            <div className="flex-grow h-px bg-[#E8E9EE80]"></div>
-            {/* Expand/collapse indicator */}
-            <span className="text-white">
-                {isExpanded ? '▼' : '►'}
-            </span>
-        </div>
-    );
-};
-
-const DashboardSection = ({ section }:any) => {
+// Simple drag-and-drop functionality with HTML5 native drag API
+const DashboardSection = ({ section, index, isEditMode, onDragStart, onDragEnter, onDragEnd, onDragOver }: any) => {
     const [isExpanded, setIsExpanded] = useState(() => {
-        // Initialize expanded state from section data
-        // Default to true if not specified
-        return section.expanded !== undefined ? section.expanded : true
+        return section.expanded !== undefined ? section.expanded : true;
     });
+    const sectionRef = useRef<HTMLDivElement>(null);
 
-    const toggleExpanded = () => {
-        setIsExpanded((prev:any) => !prev);
+    const toggleExpanded = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsExpanded((prev: boolean) => !prev);
+    };
+
+    const handleDragStart = (e: React.DragEvent) => {
+        // Store the dragged section's index
+        e.dataTransfer.setData('text/plain', index.toString());
+        
+        // Add a slight delay to improve visual feedback
+        setTimeout(() => {
+            if (sectionRef.current) {
+                sectionRef.current.style.opacity = '0.4';
+            }
+        }, 0);
+        
+        onDragStart(index);
+    };
+
+    // Required to allow dropping
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        onDragOver(index);
+    };
+
+    const handleDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        onDragEnter(index);
+    };
+
+    const handleDragEnd = () => {
+        if (sectionRef.current) {
+            sectionRef.current.style.opacity = '1';
+        }
+        onDragEnd();
     };
 
     return (
-        <div className="mb-8">
-            <SectionHeader 
-                title={section.sectionName} 
-                isExpanded={isExpanded} 
-                toggleExpanded={toggleExpanded} 
-            />
+        <div
+            ref={sectionRef}
+            draggable={isEditMode}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragEnd={handleDragEnd}
+            className={`mb-8 ${
+                isEditMode ? 'border-2 border-dashed border-blue-300 rounded-lg cursor-move' : ''
+            }`}
+            data-index={index}
+        >
+            <div className="flex items-center p-4 m-2 gap-2">
+                {isEditMode && (
+                    <div className="mr-2">
+                        <DragIndicatorIcon className="text-white" />
+                    </div>
+                )}
+                <MyContractsIcon />
+                <p className="text-[#fff]">{section.sectionName}</p>
+                <div className="flex-grow h-px bg-[#E8E9EE80]"></div>
+                <span className="text-white cursor-pointer" onClick={toggleExpanded}>
+                    {isExpanded ? '▼' : '►'}
+                </span>
+            </div>
 
             {isExpanded && (
                 <div className="px-6">
@@ -106,9 +156,8 @@ const DashboardSection = ({ section }:any) => {
                         isResizable={false}
                         isDraggable={false}
                     >
-                        {section.widgets?.map((widget:any) => {
+                        {section.widgets?.map((widget: any) => {
                             const Component = widgetMapping[widget.name];
-                            // Use widget's props directly - they're already preprocessed
                             const props = widget.props || {};
 
                             return (
@@ -137,6 +186,10 @@ export default function Home() {
     const [dashboardData, setDashboardData] = useState({ sections: [] });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<any>(null);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [showSaveSuccess, setShowSaveSuccess] = useState(false);
 
     useEffect(() => {
         // Fetch dashboard configuration from API
@@ -152,6 +205,92 @@ export default function Home() {
                 setLoading(false);
             });
     }, []);
+
+    const toggleEditMode = () => {
+        setIsEditMode(!isEditMode);
+    };
+
+    const saveDashboard = () => {
+        setLoading(true);
+        
+        // Save the current dashboard layout to the API
+        fetch("/api/dashboard", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(dashboardData),
+        })
+            .then((res) => res.json())
+            .then(() => {
+                setIsEditMode(false);
+                setLoading(false);
+                setShowSaveSuccess(true);
+            })
+            .catch((err) => {
+                console.error("Error saving dashboard data:", err);
+                setError("Failed to save dashboard configuration");
+                setLoading(false);
+            });
+    };
+
+    const handleDragStart = (index: number) => {
+        setDraggedIndex(index);
+        setIsDragging(true);
+    };
+
+    const handleDragEnter = (targetIndex: number) => {
+        if (draggedIndex === null || draggedIndex === targetIndex) return;
+
+        // Create a new array with reordered sections
+        const reorderedSections = [...dashboardData.sections];
+        const [movedSection] = reorderedSections.splice(draggedIndex, 1);
+        reorderedSections.splice(targetIndex, 0, movedSection);
+
+        // Update state with new order
+        setDashboardData({ ...dashboardData, sections: reorderedSections });
+        setDraggedIndex(targetIndex);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedIndex(null);
+        setIsDragging(false);
+    };
+
+    const handleDragOver = (index: number) => {
+        // Used to enable dropping (handled in the DashboardSection component)
+    };
+
+    // Custom Header with Edit button
+    const DashboardHeader = () => {
+        return (
+            <div className="flex justify-between items-center w-full mb-4 px-8">
+                <Header />
+                <div>
+                    {isEditMode ? (
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<SaveIcon />}
+                            onClick={saveDashboard}
+                            className="bg-blue-500"
+                        >
+                            Save Layout
+                        </Button>
+                    ) : (
+                        <IconButton
+                            color="primary"
+                            onClick={toggleEditMode}
+                            className="bg-blue-500"
+                            aria-label="Edit Layout"
+                        >
+                            <EditIcon className="text-white" />
+                        </IconButton>
+                    )}
+                </div>
+            </div>
+        );
+    };
 
     if (loading) {
         return (
@@ -187,8 +326,8 @@ export default function Home() {
                 ></div>
 
                 <div className="relative z-10 flex flex-col text-white max-h-screen overflow-y-auto">
-                    <Header />
-                    <div className="flex flex-col w-full max-w-[1633px] mx-auto items-start gap-7 py-11 px-6">
+                    <DashboardHeader />
+                    <div className="flex flex-col w-full max-w-[1633px] mx-auto items-start gap-7 py-6 px-6">
                         <NewsFeed />
                     </div>
 
@@ -199,19 +338,40 @@ export default function Home() {
                                 No dashboard sections found
                             </Typography>
                             <Typography className="text-white">
-                                {`Create a "new section" by clicking Create Section" in the header`}
+                                {`Create a "new section" by clicking "Create Section" in the header`}
                             </Typography>
                         </div>
                     ) : (
-                        /* Render all sections vertically */
+                        /* Render all sections with native HTML5 drag and drop */
                         <div className="flex flex-col">
                             {dashboardData.sections.map((section, index) => (
-                                <DashboardSection key={index} section={section} />
+                                <DashboardSection
+                                    key={`section-${index}`}
+                                    section={section}
+                                    index={index}
+                                    isEditMode={isEditMode}
+                                    onDragStart={handleDragStart}
+                                    onDragEnter={handleDragEnter}
+                                    onDragEnd={handleDragEnd}
+                                    onDragOver={handleDragOver}
+                                />
                             ))}
                         </div>
                     )}
                 </div>
             </div>
+            
+            {/* Success notification */}
+            <Snackbar 
+                open={showSaveSuccess} 
+                autoHideDuration={3000} 
+                onClose={() => setShowSaveSuccess(false)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert severity="success" sx={{ width: '100%' }}>
+                    Dashboard layout saved successfully!
+                </Alert>
+            </Snackbar>
         </div>
     );
 }

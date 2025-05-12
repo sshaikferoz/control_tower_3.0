@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 
 // Use dynamic import to avoid SSR issues with react-grid-layout
 const DashboardBuilder = dynamic(
-  () => import('@/components/DashboardBuilder'),
+  () => import('@/components/Mapping'),
   { ssr: false, loading: () => <div>Loading...</div> }
 );
 

@@ -1,4 +1,4 @@
-// components/DashboardBuilder/index.tsx
+// components/Mapping/index.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -11,7 +11,7 @@ import SidebarMapping from '@/components/SidebarMapping';
 import WidgetGrid from './WidgetGrid';
 import ConfigPanel from './ConfigPanel';
 import mirageServer from '@/lib/mirage/mirageServer';
-import { widgetConfigFields } from '@/data/widgetConfig';
+import { transformFormMetadata } from '@/helpers/transformHelpers';
 
 // MirageJS mock API server setup
 if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
@@ -37,18 +37,53 @@ const DashboardBuilder: React.FC = () => {
   const [layout, setLayout] = useState<LayoutItem[]>([]);
   const [selectedWidget, setSelectedWidget] = useState<string | null>(null);
 
-  // Use the widget configuration hook
+  // Use the widget configuration hook with hybrid mapping support
   const {
     widgetConfigurations,
     previewData,
+    transformedData,
     initializeWidgetConfig,
     updateWidgetConfig,
     generatePreview,
     savePreviewData,
     resetPreviewData,
     removeWidgetConfig,
-    prepareWidgetsWithProps
+    prepareWidgetsWithProps,
+    setApiData
   } = useWidgetConfiguration();
+
+  // Fetch sample data for widget mapping
+  useEffect(() => {
+    const fetchSampleData = async () => {
+      try {
+        // In a real implementation, fetch from actual API
+        // For demo, use mock data
+        const mockData = {
+          header: [
+            { type: "CHA", label: "OSS INV - Commodity", fieldName: "ZSCMCMD" },
+            { type: "KF", label: "OSS INV - Value", fieldName: "VALUE001" },
+            { type: "KF", label: "OSS INV - <6 Months", fieldName: "VALUE002" },
+            { type: "KF", label: "OSS INV - 6-12 Months", fieldName: "VALUE003" },
+            { type: "KF", label: "OSS INV - >12 Months", fieldName: "VALUE004" }
+          ],
+          chartData: [
+            { "ZSCMCMD": "OCTG", "VALUE001": "", "VALUE002": 51.4, "VALUE003": 13.5, "VALUE004": "" },
+            { "ZSCMCMD": "Mud & Chemical", "VALUE001": "", "VALUE002": 277, "VALUE003": 38.8, "VALUE004": 1.8 },
+            { "ZSCMCMD": "Downhole", "VALUE001": "", "VALUE002": 352.1, "VALUE003": 123.5, "VALUE004": "" },
+            { "ZSCMCMD": "Line Poles and Hware", "VALUE001": "", "VALUE002": "", "VALUE003": "", "VALUE004": "" },
+            { "ZSCMCMD": "Overall Result", "VALUE001": "", "VALUE002": 680.5, "VALUE003": 175.8, "VALUE004": 1.8 }
+          ]
+        };
+        
+        const transformedData = transformFormMetadata(mockData);
+        setApiData(transformedData);
+      } catch (error) {
+        console.error('Error fetching sample data:', error);
+      }
+    };
+    
+    fetchSampleData();
+  }, []);
 
   // Add a new widget to the layout
   const addWidget = useCallback((name: string) => {
@@ -108,20 +143,8 @@ const DashboardBuilder: React.FC = () => {
   // Function to handle manual value change for a field
   const handleManualValueChange = useCallback((field: string, value: any) => {
     if (!selectedWidget) return;
-    
-    // Find the field configuration to get the path
-    const widgetType = getSelectedWidgetType();
-    if (!widgetType) return;
-    
-    const fieldConfig = widgetType ? 
-      widgetConfigFields[widgetType]?.find(f => f.field === field) : undefined;
-    
-    updateWidgetConfig(
-      selectedWidget, 
-      fieldConfig?.path || field, 
-      value
-    );
-  }, [selectedWidget, getSelectedWidgetType, updateWidgetConfig]);
+    updateWidgetConfig(selectedWidget, field, value);
+  }, [selectedWidget, updateWidgetConfig]);
 
   // Generate preview data for the selected widget
   const handleGeneratePreview = useCallback(() => {
@@ -198,7 +221,7 @@ const DashboardBuilder: React.FC = () => {
           </div>
         </SplitterPanel>
 
-        {/* Bottom panel: Configuration panel */}
+        {/* Bottom panel: Configuration panel with hybrid mapping */}
         <SplitterPanel>
           <ConfigPanel
             selectedWidget={selectedWidget}
