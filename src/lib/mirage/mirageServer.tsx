@@ -110,7 +110,7 @@ const mockEntities: Record<string, Entity[]> = {
 
 
 // MirageJS mock API server
-const mirageServer = (environment = "development")=> {
+const mirageServer = (environment = "development") => {
     return createServer({
         environment,
         routes() {
@@ -160,15 +160,15 @@ const mirageServer = (environment = "development")=> {
                      return { error: "Invalid query parameter" };
                  }
              ); */
-            this.get('/sap/bc/bsp/sap/zbw_reporting/execute_report_oo.htm', (schema,req) => {
+            this.get('/sap/bc/bsp/sap/zbw_reporting/execute_report_oo.htm', (schema, req) => {
                 const { queryParams } = req;
-        
+
                 /**
                  * @constant
                  * @type { keyof inventoryQueries | keyof logisticsQueries | keyof procurementQueries | keyof otherQueries}
                  */
                 const query = queryParams.query
-        
+
                 switch (query) {
                     case 'YIMO_INV_ACT_IQR_CRP_TRND_Q001':
                         return new Response(
@@ -404,7 +404,7 @@ const mirageServer = (environment = "development")=> {
                             { 'content-type': 'text/xml' },
                             inventoryQueries[query]
                         )
-        
+
                     /**************************** LOGISTICS AND WAREHOUSE ****************************/
                     case 'YWHO_CT_WH_WL_SUMM':
                         return new Response(
@@ -484,7 +484,7 @@ const mirageServer = (environment = "development")=> {
                             { 'content-typ': 'text/xml' },
                             logisticsQueries[query]
                         )
-        
+
                     case 'YWHE_CT_LOG_UNCONFM_TO':
                         return new Response(
                             200,
@@ -569,7 +569,7 @@ const mirageServer = (environment = "development")=> {
                             { 'content-typ': 'text/xml' },
                             logisticsQueries[query]
                         )
-        
+
                     case 'YSCM_CT_EXT_ASSIGN_map':
                         return new Response(
                             200,
@@ -667,14 +667,14 @@ const mirageServer = (environment = "development")=> {
                             { 'content-typ': 'text/xml' },
                             procurementQueries[query]
                         )
-        
+
                     case 'YSCM_SCCT_INV_BY_COUNTRY':
                         return new Response(
                             200,
                             { 'content-typ': 'text/xml' },
                             procurementQueries[query]
                         )
-        
+
                     case 'YSCM_SCCT_INV_BY_COMMODITY':
                         return new Response(
                             200,
@@ -1161,7 +1161,7 @@ const mirageServer = (environment = "development")=> {
                             { 'content-typ': 'text/xml' },
                             procurementQueries[query]
                         )
-        
+
                     case 'YSCM_AOC_MSPEND_CONT_00':
                         return new Response(
                             200,
@@ -1506,14 +1506,52 @@ const mirageServer = (environment = "development")=> {
                             { 'content-typ': 'text/xml' },
                             otherQueries[query]
                         )
+                    case 'YSCM_INV_PRED_1':
+                        return new Response(
+                            200,
+                            { 'content-typ': 'text/xml' },
+                            otherQueries[query]
+                        )
+                    case 'YIMO_MOB_PROC_SES_TIME':
+                        return new Response(
+                            200,
+                            { 'content-typ': 'text/xml' },
+                            otherQueries[query]
+                        )
+                    case 'YPDO_CT_MOB_CO2_TEST':
+                        return new Response(
+                            200,
+                            { 'content-typ': 'text/xml' },
+                            otherQueries[query]
+                        )
+                    case 'YPDO_MOB_COUNTRY_SPEND':
+                        return new Response(
+                            200,
+                            { 'content-typ': 'text/xml' },
+                            otherQueries[query]
+                        )
+                    case 'YSCM_CT_LOSTOPP':
+                        return new Response(
+                            200,
+                            { 'content-typ': 'text/xml' },
+                            otherQueries[query]
+                        )
+
+                    case 'YSCM_SCCT_OPD_TRACK':
+                        return new Response(
+                            200,
+                            { 'content-typ': 'text/xml' },
+                            otherQueries[query]
+                        )
+
                     default:
-                        return new Response(     200,
+                        return new Response(200,
                             { 'content-typ': 'text/xml' },
                             "")
                 }
 
             })
-        
+
         },
     });
 }
